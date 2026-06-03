@@ -3,106 +3,185 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 import logo from "@/assets/logo.png";
+import { authClient } from "@/lib/auth-client";
+import { DropDown } from "./DropDown";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-
   const closeMenu = () => setOpen(false);
 
-  // 🔒 lock scroll when mobile menu open
+  const pathname = usePathname();
+
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "auto";
   }, [open]);
 
+  const navItems = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
+    { href: "/services", label: "Services" },
+    { href: "/contact", label: "Contact" },
+  ];
+
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white shadow-md">
+    <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        
-        {/* Logo */}
+
+        {/* LOGO */}
         <Link href="/" className="flex items-center">
-          <Image src={logo} width={70} height={70} alt="Hire Loop" priority />
+          <Image src={logo} width={70} height={70} alt="Hire Loop" />
         </Link>
 
-        {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center gap-6 font-medium">
-          <li><Link href="/" className="hover:text-blue-600">Home</Link></li>
-          <li><Link href="/about" className="hover:text-blue-600">About</Link></li>
-          <li><Link href="/services" className="hover:text-blue-600">Services</Link></li>
-          <li><Link href="/contact" className="hover:text-blue-600">Contact</Link></li>
+        {/* DESKTOP MENU */}
+        <ul className="hidden md:flex items-center gap-2">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`
+                    px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                    ${
+                      isActive
+                        ? "bg-indigo-50 text-indigo-700"
+                        : "text-gray-700 hover:text-indigo-600 hover:bg-gray-100"
+                    }
+                  `}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
-        {/* Desktop Auth */}
+        {/* DESKTOP AUTH */}
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/login" className="px-4 py-2 border rounded-lg hover:bg-gray-100">
-            Login
-          </Link>
+          {user ? (
+            <DropDown user={user} />
+          ) : (
+            <>
+              <Link
+                href="/logIn"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition"
+              >
+                Login
+              </Link>
 
-          <Link href="/signUp" className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800">
-            Signup
-          </Link>
+              <Link
+                href="/signUp"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                Signup
+              </Link>
+            </>
+          )}
         </div>
 
-        {/* Mobile Button */}
+        {/* MOBILE BUTTON */}
         <button
-          className="md:hidden"
+          className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
           onClick={() => setOpen(true)}
-          aria-label="Open menu"
         >
-          <Menu size={28} />
+          <Menu size={26} />
         </button>
       </div>
 
-      {/* Overlay */}
-      <div
-        onClick={closeMenu}
-        className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
-          open ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
-      />
-
-      {/* Mobile Drawer */}
-      <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        {/* Close */}
-        <div className="flex justify-end p-4">
-          <button onClick={closeMenu} aria-label="Close menu">
-            <X size={26} />
-          </button>
-        </div>
-
-        {/* Menu */}
-        <ul className="flex flex-col gap-5 px-6 font-medium">
-          <li><Link href="/" onClick={closeMenu}>Home</Link></li>
-          <li><Link href="/about" onClick={closeMenu}>About</Link></li>
-          <li><Link href="/services" onClick={closeMenu}>Services</Link></li>
-          <li><Link href="/contact" onClick={closeMenu}>Contact</Link></li>
-        </ul>
-
-        {/* Auth */}
-        <div className="mt-8 px-6 flex flex-col gap-3">
-          <Link
-            href="/login"
+      {/* OVERLAY */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={closeMenu}
-            className="border py-2 rounded-lg text-center"
-          >
-            Login
-          </Link>
+            className="fixed inset-0 bg-black/40 z-40"
+          />
+        )}
+      </AnimatePresence>
 
-          <Link
-            href="/signUp"
-            onClick={closeMenu}
-            className="bg-black text-white py-2 rounded-lg text-center"
+      {/* MOBILE DRAWER */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ x: 300 }}
+            animate={{ x: 0 }}
+            exit={{ x: 300 }}
+            transition={{ type: "spring", stiffness: 260, damping: 25 }}
+            className="fixed top-0 right-0 h-full w-72 bg-white shadow-xl z-50"
           >
-            Signup
-          </Link>
-        </div>
-      </div>
+            {/* CLOSE */}
+            <div className="flex justify-end p-4">
+              <button
+                onClick={closeMenu}
+                className="p-2 rounded-lg hover:bg-gray-100"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* MOBILE MENU */}
+            <div className="px-4 flex flex-col gap-2">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMenu}
+                    className={`
+                      px-4 py-3 rounded-lg text-sm font-medium transition
+                      ${
+                        isActive
+                          ? "bg-indigo-50 text-indigo-700"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }
+                    `}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* MOBILE AUTH */}
+            <div className="mt-6 px-4 flex flex-col gap-3">
+              {user ? (
+                <DropDown user={user} />
+              ) : (
+                <>
+                  <Link
+                    href="/logIn"
+                    onClick={closeMenu}
+                    className="border border-gray-200 py-2 rounded-lg text-center hover:bg-gray-50"
+                  >
+                    Login
+                  </Link>
+
+                  <Link
+                    href="/signUp"
+                    onClick={closeMenu}
+                    className="bg-indigo-600 text-white py-2 rounded-lg text-center hover:bg-indigo-700"
+                  >
+                    Signup
+                  </Link>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
