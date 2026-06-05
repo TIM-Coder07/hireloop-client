@@ -10,13 +10,19 @@ import {
   Input,
   Label,
   TextField,
+  ListBox,
+  Select,
 } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+const router = useRouter();
+
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("seeker");
 
   const handlePasswordChange = (value) => {
     // supports both event OR direct value
@@ -35,16 +41,18 @@ export default function SignupPage() {
     const { data: user, error } = await authClient.signUp.email({
       name: data.name,
       email: data.email,
-      password: data.password,
       image: data.imageURL,
-      callbackURL: "/logIn"
+      password: data.password,
+      role,
+      // callbackURL: "/auth/logIn",
     });
 
     if (error) {
-      toast.success(error.message);
+      toast.error(error.message);
       return;
     }
     toast.success("Account created successfully!");
+    router.push("/logIn");
   };
 
   return (
@@ -134,6 +142,28 @@ export default function SignupPage() {
               <FieldError />
             </TextField>
 
+            {/* Roll Selection  */}
+            <Select
+              selectedKey={role}
+              onSelectionChange={(key) => setRole(key)}
+              className="w-full"
+            >
+              <Label>Role</Label>
+
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+
+              <Select.Popover>
+                <ListBox>
+                  <ListBox.Item id="seeker">Job Seeker</ListBox.Item>
+
+                  <ListBox.Item id="recruiter">Recruiter</ListBox.Item>
+                </ListBox>
+              </Select.Popover>
+            </Select>
+
             {/* BUTTON */}
             <Button
               type="submit"
@@ -143,7 +173,12 @@ export default function SignupPage() {
               Create Account
             </Button>
           </Form>
-          <p className="mt-3">Already You have an Account...? <Link className="text-blue-500" href={'/logIn'}>Log In</Link></p>
+          <p className="mt-3">
+            Already You have an Account...?{" "}
+            <Link className="text-blue-500" href={"/logIn"}>
+              Log In
+            </Link>
+          </p>
         </div>
       </div>
     </div>
